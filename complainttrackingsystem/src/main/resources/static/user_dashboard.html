@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f8ff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+        }
+
+        .button-group button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .button-group button:hover {
+            background-color: #2980b9;
+        }
+
+        .section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        input, textarea {
+            padding: 8px;
+            margin: 10px;
+            width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #complaintList, #statusSection {
+            text-align: left;
+            margin: 20px auto;
+            max-width: 600px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Welcome to User Dashboard</h1>
+
+    <div class="button-group">
+        <button onclick="showSection('createSection')">Create Complaint</button>
+        <button onclick="loadMyComplaints()">View My Complaints</button>
+        <button onclick="loadStatus()">Check Complaint Status</button>
+    </div>
+
+    <!-- ✅ Create Complaint Section -->
+    <div id="createSection" class="section">
+        <h2>Create New Complaint</h2>
+        <form onsubmit="submitComplaint(event)">
+            <input type="text" id="subject" placeholder="Enter subject" required><br>
+            <textarea id="description" placeholder="Describe your issue..." required></textarea><br>
+            <button type="submit">Submit Complaint</button>
+        </form>
+    </div>
+
+    <!-- ✅ View Complaints Section -->
+    <div id="complaintList" class="section">
+        <h2>My Complaints</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Subject</th><th>Description</th><th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="complaintsTableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- ✅ Status Section -->
+    <div id="statusSection" class="section">
+        <h2>Complaint Status</h2>
+        <p>Check status of your complaints in the list above.</p>
+    </div>
+
+    <script>
+        function hideAllSections() {
+            document.getElementById('createSection').style.display = 'none';
+            document.getElementById('complaintList').style.display = 'none';
+            document.getElementById('statusSection').style.display = 'none';
+        }
+
+        function showSection(id) {
+            hideAllSections();
+            document.getElementById(id).style.display = 'block';
+        }
+
+        function submitComplaint(event) {
+            event.preventDefault();
+            const subject = document.getElementById("subject").value;
+            const description = document.getElementById("description").value;
+
+            fetch('/api/complaints/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ subject, description })
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error("Submission failed");
+                }
+                return res.json();
+            })
+            .then(data => {
+                alert("Complaint submitted successfully!");
+                document.getElementById("subject").value = '';
+                document.getElementById("description").value = '';
+                hideAllSections();
+            })
+            .catch(err => {
+                alert("Error submitting complaint");
+                console.error(err);
+            });
+        }
+
+        function loadMyComplaints() {
+            hideAllSections();
+            fetch('/api/complaints/my')
+                .then(res => res.json())
+                .then(data => {
+                    const tableBody = document.getElementById("complaintsTableBody");
+                    tableBody.innerHTML = '';
+                    data.forEach(c => {
+                        const row = `<tr>
+                            <td>${c.id}</td>
+                            <td>${c.subject}</td>
+                            <td>${c.description}</td>
+                            <td>${c.status}</td>
+                        </tr>`;
+                        tableBody.innerHTML += row;
+                    });
+                    document.getElementById("complaintList").style.display = 'block';
+                });
+        }
+
+        function loadStatus() {
+            hideAllSections();
+            document.getElementById("statusSection").style.display = 'block';
+        }
+
+        window.onload = () => hideAllSections();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #eef2f7;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    .dashboard-container {
+      padding: 40px;
+    }
+
+    h1 {
+      color: #2c3e50;
+    }
+
+    .button-group {
+      margin-top: 20px;
+    }
+
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #2980b9;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button:hover {
+      background-color: #3498db;
+    }
+
+    #output {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    table th, table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+    }
+
+    #statusUpdateSection {
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-container">
+    <h1>Welcome to Admin Dashboard</h1>
+
+    <div class="button-group">
+      <button onclick="viewComplaints()">View All Complaints</button>
+      <button onclick="showStatusUpdate()">Update Complaint Status</button>
+    </div>
+
+    <div id="output"></div>
+
+    <div id="statusUpdateSection" style="display: none;">
+      <h3>Update Complaint Status</h3>
+      <form onsubmit="updateStatus(event)">
+        <input type="text" id="complaintId" placeholder="Complaint ID" required />
+        <select id="newStatus">
+          <option value="Incomplete">Incomplete</option>
+          <option value="Ongoing">Ongoing</option>
+          <option value="Completed">Completed</option>
+        </select>
+        <button type="submit">Update</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const apiBase = "http://localhost:8080/api";
+
+    function viewComplaints() {
+      fetch(`${apiBase}/complaints/all`, {
+        method: "GET",
+        credentials: "include"
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch complaints");
+        return res.json();
+      })
+      .then(complaints => {
+        let html = "<h3>All Complaints</h3><table><tr><th>ID</th><th>User</th><th>Complaint</th><th>Status</th><th>Action</th></tr>";
+        complaints.forEach(c => {
+          html += `<tr>
+            <td>${c.id}</td>
+            <td>${c.user ? c.user.name : 'N/A'}</td>
+            <td>${c.description}</td>
+            <td>${c.status}</td>
+            <td>${c.status === 'Completed' ? `<button onclick="deleteComplaint(${c.id})">Delete</button>` : '-'}</td>
+          </tr>`;
+        });
+        html += "</table>";
+        document.getElementById("output").innerHTML = html;
+      })
+      .catch(err => {
+        document.getElementById("output").innerHTML = `<p style="color:red">${err.message}</p>`;
+      });
+    }
+
+    function showStatusUpdate() {
+      document.getElementById("statusUpdateSection").style.display = "block";
+    }
+
+    function updateStatus(event) {
+      event.preventDefault();
+      const id = document.getElementById("complaintId").value;
+      const newStatus = document.getElementById("newStatus").value;
+
+      fetch(`${apiBase}/admin/complaints/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+        credentials: "include"
+      })
+      .then(res => res.text())
+      .then(msg => alert(msg));
+    }
+
+    function deleteComplaint(id) {
+      if (confirm("Are you sure to delete this completed complaint?")) {
+        fetch(`${apiBase}/admin/complaints/${id}`, {
+          method: "DELETE",
+          credentials: "include"
+        })
+        .then(res => res.text())
+        .then(msg => {
+          alert(msg);
+          viewComplaints();
+        });
+      }
+    }
+  </script>
+</body>
+</html>

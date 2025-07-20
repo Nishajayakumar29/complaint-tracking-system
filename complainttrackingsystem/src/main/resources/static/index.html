@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Welcome - Login / Signup</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: gray;
+      font-family: Arial, sans-serif;
+    }
+
+    .wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding-top: 40px;
+    }
+
+    .main-heading {
+      font-size: 32px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      width: 400px;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      margin: 0 15px;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-weight: bold;
+      color: #4a90e2;
+    }
+
+    .tab.active {
+      border-color: #4a90e2;
+    }
+
+    form {
+      display: none;
+    }
+
+    form.active {
+      display: block;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"],
+    input[type="submit"],
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+
+    input[type="submit"] {
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #357abd;
+    }
+
+    .message {
+      color: green;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .error {
+      color: red;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h1 class="main-heading">COMPLAINT TRACKING SYSTEM</h1>
+
+    <div class="container">
+      <div class="tabs">
+        <div id="loginTab" class="tab active" onclick="showForm('login')">Login</div>
+        <div id="signupTab" class="tab" onclick="showForm('signup')">Signup</div>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" class="active" onsubmit="handleLogin(event)">
+        <input type="email" id="loginEmail" placeholder="Email" required />
+        <input type="password" id="loginPassword" placeholder="Password" required />
+        <input type="submit" value="Send OTP" />
+        <div id="loginMessage" class="message"></div>
+      </form>
+
+      <!-- Signup Form -->
+      <form id="signupForm" onsubmit="handleSignup(event)">
+        <input type="text" id="signupName" placeholder="Full Name" required />
+        <input type="email" id="signupEmail" placeholder="Email" required />
+        <input type="password" id="signupPassword" placeholder="Password" required />
+        <select id="signupRole" required>
+          <option value="" disabled selected>Select Role</option>
+          <option value="USER">User</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+        <input type="submit" value="Sign Up" />
+        <div id="signupMessage" class="message"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function showForm(form) {
+      document.getElementById('loginForm').classList.remove('active');
+      document.getElementById('signupForm').classList.remove('active');
+      document.getElementById('loginTab').classList.remove('active');
+      document.getElementById('signupTab').classList.remove('active');
+
+      if (form === 'login') {
+        document.getElementById('loginForm').classList.add('active');
+        document.getElementById('loginTab').classList.add('active');
+      } else {
+        document.getElementById('signupForm').classList.add('active');
+        document.getElementById('signupTab').classList.add('active');
+      }
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const messageDiv = document.getElementById('loginMessage');
+
+      if (!email || !password) {
+        messageDiv.textContent = 'Please enter email and password';
+        messageDiv.classList.add('error');
+        return;
+      }
+
+      messageDiv.textContent = '';
+      messageDiv.classList.remove('error');
+
+      sessionStorage.setItem('login_email', email);
+      sessionStorage.setItem('login_password', password);
+
+      try {
+        const response = await fetch(`http://localhost:8080/api/otp/send?email=${email}`, {
+          method: 'POST'
+        });
+
+        const otp = await response.text();
+
+        messageDiv.textContent = `Your OTP is: ${otp}`;
+        messageDiv.classList.remove('error');
+
+        showOtpInput();
+      } catch (err) {
+        messageDiv.textContent = 'Failed to send OTP. Try again later.';
+        messageDiv.classList.add('error');
+      }
+    }
+
+    function showOtpInput() {
+      document.getElementById('signupForm').style.display = 'none';
+
+      if (!document.getElementById('otpSection')) {
+        const container = document.querySelector('.container');
+
+        const otpSection = document.createElement('div');
+        otpSection.id = 'otpSection';
+        otpSection.style.marginTop = '15px';
+
+        otpSection.innerHTML = `
+          <input type="text" id="otpInput" placeholder="Enter OTP" required />
+          <button onclick="verifyOtp()">Verify OTP</button>
+          <div id="otpMessage" class="message"></div>
+        `;
+
+        container.appendChild(otpSection);
+      } else {
+        document.getElementById('otpSection').style.display = 'block';
+      }
+    }
+
+    async function verifyOtp() {
+      const email = sessionStorage.getItem('login_email');
+      const password = sessionStorage.getItem('login_password');
+      const otp = document.getElementById('otpInput').value;
+      const messageDiv = document.getElementById('otpMessage');
+
+      try {
+        const verifyResponse = await fetch('http://localhost:8080/api/otp/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, otp })
+        });
+
+        const verifyResult = await verifyResponse.text();
+
+        if (verifyResponse.ok) {
+          messageDiv.textContent = verifyResult;
+          messageDiv.classList.remove('error');
+
+          localStorage.setItem("userEmail", email);
+
+          const roleResponse = await fetch('http://localhost:8080/api/otp/get-role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+
+          const role = await roleResponse.text();
+
+          if (role === 'ADMIN') {
+            window.location.href = '/admin_dashboard.html';
+          } else if (role === 'USER') {
+            window.location.href = '/user_dashboard.html';
+          } else {
+            messageDiv.textContent = 'Invalid role';
+            messageDiv.classList.add('error');
+          }
+        } else {
+          messageDiv.textContent = verifyResult;
+          messageDiv.classList.add('error');
+        }
+      } catch (error) {
+        messageDiv.textContent = 'OTP verification failed';
+        messageDiv.classList.add('error');
+      }
+    }
+
+    async function handleSignup(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('signupName').value;
+      const email = document.getElementById('signupEmail').value;
+      const password = document.getElementById('signupPassword').value;
+      const role = document.getElementById('signupRole').value;
+      const messageDiv = document.getElementById('signupMessage');
+
+      if (!name || !email || !password || !role) {
+        messageDiv.textContent = 'Please fill all fields';
+        messageDiv.classList.add('error');
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:8080/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, role })
+        });
+
+        const result = await response.text();
+
+        if (response.ok) {
+          messageDiv.textContent = result;
+          messageDiv.classList.remove('error');
+          showForm('login');
+        } else {
+          messageDiv.textContent = result;
+          messageDiv.classList.add('error');
+        }
+      } catch (error) {
+        messageDiv.textContent = 'Signup failed. Try again later.';
+        messageDiv.classList.add('error');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login with OTP</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #eaf0f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      width: 350px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #4a90e2;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #357abd;
+    }
+
+    .otp-section {
+      display: none;
+    }
+
+    .message {
+      margin-top: 10px;
+      text-align: center;
+      color: green;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Login</h2>
+    <div id="form-section">
+      <input type="email" id="email" placeholder="Enter your email" required />
+      <input type="password" id="password" placeholder="Enter your password" required />
+      <button onclick="sendOtp()">Send OTP</button>
+    </div>
+
+    <div class="otp-section" id="otp-section">
+      <input type="text" id="otp" placeholder="Enter OTP" required />
+      <button onclick="verifyOtp()">Verify OTP</button>
+    </div>
+
+    <div class="message" id="message"></div>
+  </div>
+
+  <script>
+    async function sendOtp() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const messageDiv = document.getElementById('message');
+
+      if (!email || !password) {
+        messageDiv.textContent = 'Please enter email and password';
+        messageDiv.classList.add("error");
+        return;
+      }
+
+      sessionStorage.setItem('login_email', email);
+      sessionStorage.setItem('login_password', password);
+
+      try {
+        const response = await fetch(`http://localhost:8080/api/otp/send?email=${email}`, {
+          method: 'POST'
+        });
+
+        const result = await response.text();
+        console.log("OTP received:", result);
+        messageDiv.textContent = "Your OTP is: " + result;
+        messageDiv.classList.remove("error");
+        document.getElementById('otp-section').style.display = 'block';
+      } catch (error) {
+        messageDiv.textContent = 'Failed to send OTP';
+        messageDiv.classList.add("error");
+      }
+    }
+
+    async function verifyOtp() {
+      const email = sessionStorage.getItem('login_email');
+      const password = sessionStorage.getItem('login_password');
+      const otp = document.getElementById('otp').value;
+      const messageDiv = document.getElementById('message');
+
+      try {
+        const verifyResponse = await fetch('http://localhost:8080/api/otp/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, otp }),
+        });
+
+        const verifyResult = await verifyResponse.text();
+
+        if (verifyResponse.ok) {
+          messageDiv.textContent = verifyResult;
+          messageDiv.classList.remove("error");
+
+          const roleResponse = await fetch('http://localhost:8080/api/otp/get-role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+
+          const role = await roleResponse.text();
+
+          if (role === "ADMIN") {
+            window.location.href = "/admin_dashboard.html";
+          } else if (role === "USER") {
+            window.location.href = "/user_dashboard.html";
+          } else {
+            messageDiv.textContent = "Invalid credentials or role";
+            messageDiv.classList.add("error");
+          }
+
+        } else {
+          messageDiv.textContent = verifyResult;
+          messageDiv.classList.add("error");
+        }
+      } catch (error) {
+        messageDiv.textContent = 'OTP verification failed';
+        messageDiv.classList.add("error");
+      }
+    }
+  </script>
+</body>
+</html>
