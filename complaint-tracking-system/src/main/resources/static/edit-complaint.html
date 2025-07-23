@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Complaint</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #f5f7fa;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      background-color: white;
+      padding: 30px 40px;
+      max-width: 600px;
+      width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      font-size: 26px;
+      color: #333;
+      margin-bottom: 25px;
+      text-align: center;
+    }
+
+    p {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #444;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      width: 100%;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+ 
+
+  <div id="formSection">
+    <p><strong>Complaint:</strong> <span id="complaintText">Loading...</span></p>
+    <label for="statusSelect">Change Status:</label>
+    <select id="statusSelect">
+      <option value="Not Started">Not Started</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Completed">Completed</option>
+    </select>
+    <button onclick="submitUpdate()">Update Status</button>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const complaintId = urlParams.get('id');
+
+    let complaint = null;
+
+    // Fetch complaint details
+    fetch('/api/complaints/all') // If you have a `/api/complaints/{id}` use that instead
+      .then(res => res.json())
+      .then(data => {
+        complaint = data.find(c => c.id == complaintId);
+        if (!complaint) throw new Error("Complaint not found");
+
+        document.getElementById('complaintText').textContent = complaint.complaintText;
+        document.getElementById('statusSelect').value = complaint.status;
+      })
+      .catch(err => alert("Error loading complaint: " + err.message));
+
+    // Submit update
+    function submitUpdate() {
+      const newStatus = document.getElementById('statusSelect').value;
+
+      fetch(`/api/complaints/${complaintId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: complaintId, status: newStatus })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to update");
+        alert("Complaint status updated successfully");
+       
+         window.location.href = "admin-update-status.html";
+      })
+      
+      .catch(err => alert("Error updating: " + err.message));
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Update Complaint Status</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    select {
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Admin Panel - Update Complaint Status</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>User Name</th>
+        <th>User Email</th>
+        <th>Complaint</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="complaintsTableBody">
+      <!-- Dynamically filled by admin.js -->
+    </tbody>
+  </table>
+  <div style="margin-top: 40px; text-align: center;">
+  <button onclick="goToAdminDashboard()" 
+          style="background-color: gray; color: white; padding: 10px 20px; border: none; border-radius: 5px;">
+    Back to Admin Dashboard
+  </button>
+</div>
+  <script>
+     window.goToAdminDashboard = function () {
+    window.location.href = "admin-dashboard.html";
+  };
+</script>
+<script src="/js/admin.js"></script>
+
+</body>
+</html>
